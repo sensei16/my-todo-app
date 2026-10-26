@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f5f7fb">
+<title>My Tasks | ToDoリスト</title>
+<style>
+  :root { --bg:#f5f7fb; --card:#fff; --ink:#202638; --muted:#70788b; --line:#e7eaf1; --accent:#5267df; --accent-soft:#eef0ff; --danger:#c83f52; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+  .wrap { width:min(760px,100%); margin:0 auto; padding:28px 18px 48px; }
+  header { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:24px; }
+  .eyebrow { color:var(--accent); font-size:.78rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
+  h1 { margin:4px 0 0; font-size:clamp(1.8rem,5vw,2.4rem); letter-spacing:-.04em; }
+  .subtitle { margin:7px 0 0; color:var(--muted); font-size:.95rem; }
+  .mark { display:grid; place-items:center; width:54px; height:54px; border-radius:17px; background:var(--accent-soft); color:var(--accent); font-size:1.6rem; flex-shrink:0; }
+  .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:18px; }
+  .stat { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px; }
+  .stat span { display:block; color:var(--muted); font-size:.8rem; }
+  .stat strong { display:block; font-size:1.5rem; margin-top:4px; }
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:20px; padding:20px; box-shadow:0 8px 30px rgba(28,40,80,.04); margin-bottom:16px; }
+  h2 { margin:0 0 16px; font-size:1.08rem; }
+  label { display:block; font-size:.85rem; font-weight:700; margin-bottom:7px; }
+  input, select, button { font:inherit; }
+  input[type="text"], input[type="date"], select { width:100%; min-width:0; border:1px solid #dce1eb; border-radius:11px; padding:12px 13px; background:#fff; color:var(--ink); outline:none; }
+  input:focus, select:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(82,103,223,.13); }
+  .fields { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px; }
+  .add-row { display:flex; gap:10px; }
+  .add-row input { flex:1; }
+  button { cursor:pointer; border:0; border-radius:11px; padding:11px 15px; font-weight:750; transition:transform .08s,opacity .15s; }
+  button:active { transform:scale(.98); }
+  .primary { color:#fff; background:var(--accent); white-space:nowrap; }
+  .filters { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  .filter { background:#f0f2f7; color:#626b80; padding:8px 12px; font-size:.88rem; }
+  .filter.active { background:var(--accent-soft); color:var(--accent); }
+  .task-list { display:grid; gap:10px; }
+  .task { display:flex; align-items:flex-start; gap:12px; padding:14px; border:1px solid var(--line); border-radius:14px; background:#fff; }
+  .task input[type="checkbox"] { width:20px; height:20px; margin:2px 0 0; accent-color:var(--accent); flex-shrink:0; }
+  .task-main { flex:1; min-width:0; }
+  .task-title { font-weight:700; overflow-wrap:anywhere; }
+  .task.done .task-title { text-decoration:line-through; color:#8b92a2; }
+  .task-meta { display:flex; flex-wrap:wrap; gap:7px; margin-top:8px; align-items:center; }
+  .pill { font-size:.75rem; border-radius:7px; padding:4px 7px; background:#f1f3f8; color:#687187; }
+  .priority-high { color:#b62e42; background:#fff0f1; }
+  .priority-medium { color:#96620a; background:#fff6df; }
+  .priority-low { color:#287b57; background:#e9f8f0; }
+  .overdue { color:#b62e42; background:#fff0f1; }
+  .delete { color:#9aa1b0; background:transparent; padding:5px 7px; font-size:1.15rem; }
+  .delete:hover { color:var(--danger); background:#fff0f1; }
+  .empty { text-align:center; padding:30px 12px; color:var(--muted); }
+  .empty .emoji { font-size:2rem; margin-bottom:8px; }
+  .foot { color:var(--muted); font-size:.8rem; line-height:1.6; text-align:center; margin-top:20px; }
+  @media (max-width:520px) {
+    .wrap { padding:22px 13px 36px; }
+    .panel { padding:16px; border-radius:17px; }
+    .fields { grid-template-columns:1fr; gap:12px; }
+    .add-row { flex-direction:column; }
+    .add-row .primary { width:100%; }
+    .stat { padding:12px 10px; }
+    .stat strong { font-size:1.3rem; }
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">YOUR DAILY PLANNER</div>
+      <h1>My Tasks<span style="color:var(--accent)">.</span></h1>
+      <p class="subtitle">今日やることを、ひとつずつ。</p>
+    </div>
+    <div class="mark" aria-hidden="true">✓</div>
+  </header>
+
+  <section class="stats" aria-label="タスクの状況">
+    <div class="stat"><span>すべて</span><strong id="totalCount">0</strong></div>
+    <div class="stat"><span>未完了</span><strong id="todoCount">0</strong></div>
+    <div class="stat"><span>完了</span><strong id="doneCount">0</strong></div>
+  </section>
+
+  <section class="panel">
+    <h2>＋ 新しいタスク</h2>
+    <form id="taskForm">
+      <label for="taskTitle">タスク名</label>
+      <div class="add-row">
+        <input id="taskTitle" type="text" maxlength="120" placeholder="例：英語を10分勉強する" required>
+        <button class="primary" type="submit">追加する</button>
+      </div>
+      <div class="fields">
+        <div>
+          <label for="taskDue">期限（任意）</label>
+          <input id="taskDue" type="date">
+        </div>
+        <div>
+          <label for="taskPriority">優先順位</label>
+          <select id="taskPriority">
+            <option value="high">高い</option>
+            <option value="medium" selected>ふつう</option>
+            <option value="low">低い</option>
+          </select>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <section class="panel">
+    <h2>タスク一覧</h2>
+    <div class="filters" role="group" aria-label="表示するタスク">
+      <button class="filter active" data-filter="all" type="button">すべて</button>
+      <button class="filter" data-filter="todo" type="button">未完了</button>
+      <button class="filter" data-filter="done" type="button">完了済み</button>
+    </div>
+    <div id="taskList" class="task-list"></div>
+  </section>
+  <p class="foot">タスクはこのブラウザに自動保存されます。<br>同じ端末・同じブラウザで開くと、続きから使えます。</p>
+</main>
+<script>
+(() => {
+  const STORAGE_KEY = "myTasks.v1";
+  const $ = (id) => document.getElementById(id);
+  const form = $("taskForm");
+  const titleInput = $("taskTitle");
+  const dueInput = $("taskDue");
+  const priorityInput = $("taskPriority");
+  const list = $("taskList");
+  let filter = "all";
+  let tasks = [];
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    if (Array.isArray(saved)) tasks = saved;
+  } catch (_) { tasks = []; }
+
+  const priorities = {
+    high: { label: "優先度：高", className: "priority-high", rank: 0 },
+    medium: { label: "優先度：中", className: "priority-medium", rank: 1 },
+    low: { label: "優先度：低", className: "priority-low", rank: 2 }
+  };
+  const todayISO = () => {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 10);
+  };
+  const escapeHTML = (value) => String(value).replace(/[&<>"']/g, ch => ({
+    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+  }[ch]));
+  const save = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+  const formatDate = (iso) => {
+    if (!iso) return "";
+    const [y,m,d] = iso.split("-");
+    return `${y}/${m}/${d}`;
+  };
+
+  function render() {
+    $("totalCount").textContent = tasks.length;
+    $("todoCount").textContent = tasks.filter(t => !t.done).length;
+    $("doneCount").textContent = tasks.filter(t => t.done).length;
+    document.querySelectorAll(".filter").forEach(btn => {
+      const active = btn.dataset.filter === filter;
+      btn.classList.toggle("active", active);
+      btn.setAttribute("aria-pressed", String(active));
+    });
+
+    let shown = tasks.filter(t => filter === "all" || (filter === "todo" && !t.done) || (filter === "done" && t.done));
+    shown = shown.slice().sort((a,b) => {
+      if (a.done !== b.done) return Number(a.done) - Number(b.done);
+      const pa = priorities[a.priority]?.rank ?? 1;
+      const pb = priorities[b.priority]?.rank ?? 1;
+      if (pa !== pb) return pa - pb;
+      if (a.due && b.due) return a.due.localeCompare(b.due);
+      if (a.due) return -1;
+      if (b.due) return 1;
+      return b.createdAt - a.createdAt;
+    });
+
+    if (!shown.length) {
+      list.innerHTML = `<div class="empty"><div class="emoji">📝</div><strong>${filter === "done" ? "完了したタスクはまだありません" : filter === "todo" ? "未完了のタスクはありません" : "タスクを追加してみよう"}</strong><div style="margin-top:5px;font-size:.9rem">上のフォームから登録できます。</div></div>`;
+      return;
+    }
+
+    list.innerHTML = shown.map(task => {
+      const p = priorities[task.priority] || priorities.medium;
+      const isOverdue = task.due && task.due < todayISO() && !task.done;
+      return `<article class="task ${task.done ? "done" : ""}">
+        <input type="checkbox" aria-label="${task.done ? "完了を取り消す" : "完了にする"}：${escapeHTML(task.title)}" data-action="toggle" data-id="${task.id}" ${task.done ? "checked" : ""}>
+        <div class="task-main">
+          <div class="task-title">${escapeHTML(task.title)}</div>
+          <div class="task-meta">
+            ${task.due ? `<span class="pill ${isOverdue ? "overdue" : ""}">${isOverdue ? "期限切れ · " : "期限 · "}${formatDate(task.due)}</span>` : ""}
+            <span class="pill ${p.className}">${p.label}</span>
+          </div>
+        </div>
+        <button class="delete" type="button" title="タスクを削除" aria-label="タスクを削除：${escapeHTML(task.title)}" data-action="delete" data-id="${task.id}">×</button>
+      </article>`;
+    }).join("");
+  }
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const title = titleInput.value.trim();
+    if (!title) { titleInput.focus(); return; }
+    tasks.push({
+      id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random()),
+      title,
+      due: dueInput.value,
+      priority: priorityInput.value,
+      done: false,
+      createdAt: Date.now()
+    });
+    save();
+    form.reset();
+    priorityInput.value = "medium";
+    titleInput.focus();
+    render();
+  });
+
+  list.addEventListener("change", (event) => {
+    const target = event.target;
+    if (target.dataset.action !== "toggle") return;
+    const task = tasks.find(t => t.id === target.dataset.id);
+    if (task) { task.done = target.checked; save(); render(); }
+  });
+  list.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-action='delete']");
+    if (!button) return;
+    const task = tasks.find(t => t.id === button.dataset.id);
+    if (!task) return;
+    if (confirm(`「${task.title}」を削除しますか？`)) {
+      tasks = tasks.filter(t => t.id !== task.id);
+      save();
+      render();
+    }
+  });
+  document.querySelectorAll(".filter").forEach(btn => {
+    btn.addEventListener("click", () => { filter = btn.dataset.filter; render(); });
+  });
+  render();
+})();
+</script>
+</body>
+</html>
